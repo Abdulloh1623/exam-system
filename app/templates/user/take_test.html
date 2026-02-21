@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ test.title }}</title>
+    <style>
+        /* 1. CSS O'zgaruvchilari (Day/Night rejimlar uchun) */
+        :root {
+            --bg: #f4f7f6;
+            --container-bg: #ffffff;
+            --text: #333333;
+            --border: #dddddd;
+            --card-sub: #fafafa;
+        }
+
+        [data-theme="dark"] {
+            --bg: #121212;
+            --container-bg: #1e1e1e;
+            --text: #e0e0e0;
+            --border: #333333;
+            --card-sub: #252525;
+        }
+
+        body { background-color: var(--bg); color: var(--text); font-family: sans-serif; transition: 0.3s; margin: 20px; }
+        .container { max-width: 850px; margin: auto; background: var(--container-bg); padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 15px; }
+        .timer { font-size: 26px; font-weight: bold; color: #e74c3c; }
+        
+        .nav-circles { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; }
+        .circle { 
+            width: 38px; height: 38px; border-radius: 50%; border: 2px solid var(--border); 
+            display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; 
+        }
+        .circle.active { border-color: #3498db; background: #3498db; color: white; }
+        .circle.answered { background: #2ecc71; border-color: #2ecc71; color: white; }
+
+        .question-item { display: none; margin: 20px 0; padding: 20px; border: 1px solid var(--border); border-radius: 10px; background: var(--card-sub); }
+        .question-item.active { display: block !important; } 
+
+        .option { display: block; margin: 12px 0; padding: 15px; background: var(--container-bg); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; }
+        
+        .theme-btn { padding: 8px 15px; border-radius: 20px; border: 1px solid var(--border); cursor: pointer; background: var(--container-bg); color: var(--text); margin-bottom: 10px; }
+    </style>
+</head>
+<body id="body-tag">
+
+<div class="container">
+    <button class="theme-btn" onclick="toggleTheme()">🌓 Rejimni almashtirish</button>
+    
+    <div class="header">
+        <h2>{{ test.title }}</h2>
+        <div class="timer" id="timer_box">00:00</div>
+    </div>
+
+    <div class="nav-circles">
+        {% for q in questions %}
+            <div class="circle" id="circle-{{ forloop.counter }}" onclick="showQ({{ forloop.counter }})">{{ forloop.counter }}</div>
+        {% endfor %}
+    </div>
+
+    <form id="test_form" method="POST">
+        {% csrf_token %}
+        {% for q in questions %}
+            <div class="question-item" id="q-{{ forloop.counter }}">
+                <h3>{{ forloop.counter }}. {{ q.text }}</h3>
+                {% for a in q.answers.all %}
+                    <label class="option">
+                        <input type="radio" name="q{{ q.id }}" value="{{ a.id }}" onchange="setAnswered({{ forloop.parentloop.counter }})" required>
+                        <span>{{ a.text }}</span>
+                    </label>
+                {% endfor %}
+            </div>
+        {% endfor %}
+
+        <div style="margin-top:20px; display:flex; justify-content:space-between;">
+            <b id="counter_text"></b>
+            <button type="button" id="next-btn" style="padding:10px 20px; background:#3498db; color:white; border:none; border-radius:5px; cursor:pointer;">Keyingi →</button>
+            <button type="submit" id="submit-btn" style="padding:10px 20px; background:#2ecc71; color:white; border:none; border-radius:5px; display:none;">Yakunlash ✓</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    var current = 1;
+    var total = parseInt("{{ questions.count }}");
+    var seconds = parseInt("{{ duration_seconds }}");
+
+    // 1. Theme Logic
+    function toggleTheme() {
+        const html = document.documentElement;
+        if (html.getAttribute('data-theme') === 'dark') {
+            html.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'light');
+        } else {
+            html.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+        }
+    }
+    if (localStorage.getItem('theme') === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+
+    // 2. Timer Logic
+    setInterval(function() {
+        if (seconds <= 0) document.getElementById('test_form').submit();
+        else {
+            let m = Math.floor(seconds / 60);
+            let s = seconds % 60;
+            document.getElementById('timer_box').innerHTML = (m < 10 ? '0' : '') + m + ":" + (s < 10 ? '0' : '') + s;
+            seconds--;
+        }
+    }, 1000);
+
+    // 3. Question Logic
+    function showQ(n) {
+        document.querySelectorAll('.question-item').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.circle').forEach(el => el.classList.remove('active'));
+        document.getElementById('q-' + n).classList.add('active');
+        document.getElementById('circle-' + n).classList.add('active');
+        current = n;
+        updateUI();
+    }
+
+    function updateUI() {
+        document.getElementById('counter_text').innerText = "Savol: " + current + " / " + total;
+        const answered = document.querySelectorAll('.circle.answered').length;
+        document.getElementById('submit-btn').style.display = (answered === total) ? 'block' : 'none';
+        
+        const nextBtn = document.getElementById('next-btn');
+        if (current === total && answered < total) {
+            nextBtn.innerText = "Bo'sh savolga qaytish";
+            nextBtn.onclick = function() {
+                let firstEmpty = document.querySelector('.circle:not(.answered)');
+                if (firstEmpty) showQ(parseInt(firstEmpty.innerText));
+            };
+        } else {
+            nextBtn.innerText = "Keyingi →";
+            nextBtn.onclick = function() { showQ(current + 1); };
+            nextBtn.style.display = (current === total) ? 'none' : 'block';
+        }
+    }
+
+    function setAnswered(n) {
+        document.getElementById('circle-' + n).classList.add('answered');
+        updateUI();
+    }
+
+    window.onload = function() { showQ(1); };
+</script>
+</body>
+</html>

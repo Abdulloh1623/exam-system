@@ -1,0 +1,16 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<h2>{{ test.title }} uchun savollarni yuklash</h2>
+<form method="post">
+    {% csrf_token %}
+    <p>Savollarni quyidagi formatda tashlang:</p>
+    <pre>
+    1. O'zbekiston poytaxti?
+    A) Buxoro
+    + B) Toshkent
+    </pre>
+    <textarea name="bulk_data" rows="20" style="width: 100%; font-family: monospace;"></textarea>
+    <br><br>
+    <input type="submit" value="Yuklash" class="default" style="background: #417690; color: white; padding: 10px 20px; border: none; cursor: pointer;">
+</form>
+{% endblock %}

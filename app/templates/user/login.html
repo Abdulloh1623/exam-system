@@ -1,0 +1,9 @@
+<div style="max-width: 400px; margin: 100px auto; font-family: sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+    <h2 style="text-align: center; color: #1a73e8;">Tizimga kirish</h2>
+    <form method="post">
+        {% csrf_token %}
+        <p>Login: <br> {{ form.username }}</p>
+        <p>Parol: <br> {{ form.password }}</p>
+        <button type="submit" style="width: 100%; padding: 10px; background: #1a73e8; color: white; border: none; border-radius: 5px; cursor: pointer;">Kirish</button>
+    </form>
+</div>

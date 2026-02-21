@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tizimga kirish | Predator Test</title>
+    <style>
+        :root { --p: #1a73e8; --bg: #0f172a; --card: #1e293b; --t: #f8fafc; --b: #334155; }
+        body { background: var(--bg); color: var(--t); font-family: 'Inter', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { background: var(--card); padding: 40px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 100%; max-width: 420px; text-align: center; border: 1px solid var(--b); }
+        
+        /* Rol tanlash tugmalari */
+        .role-selector { display: flex; gap: 10px; margin-bottom: 25px; background: #0f172a; padding: 5px; border-radius: 12px; }
+        .role-btn { flex: 1; padding: 12px; border-radius: 10px; cursor: pointer; border: none; background: transparent; color: #94a3b8; font-weight: 600; transition: 0.3s; }
+        .role-btn.active { background: var(--p); color: #fff; box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3); }
+
+        .input-group { text-align: left; margin-bottom: 20px; }
+        .input-group label { display: block; margin-bottom: 8px; font-size: 14px; color: #94a3b8; font-weight: 500; }
+        .input-group input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--b); background: #0f172a; color: #fff; box-sizing: border-box; outline: none; transition: 0.2s; }
+        .input-group input:focus { border-color: var(--p); box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.2); }
+
+        .btn-submit { width: 100%; padding: 15px; border-radius: 10px; border: none; background: var(--p); color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 10px; transition: 0.3s; }
+        .btn-submit:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        .error-box { background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 12px; border-radius: 8px; font-size: 14px; margin-bottom: 20px; border: 1px solid rgba(239, 68, 68, 0.2); }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h2 style="margin-bottom: 8px;">Tizimga kirish</h2>
+        <p style="color: #94a3b8; font-size: 14px; margin-bottom: 30px;">Davom etish uchun o'z rolingizni tanlang</p>
+
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="role-selector">
+                <button type="button" id="userBtn" class="role-btn active" onclick="setRole('user')">O'quvchi</button>
+                <button type="button" id="adminBtn" class="role-btn" onclick="setRole('admin')">Admin</button>
+            </div>
+            
+            <input type="hidden" name="next" id="next_url" value="/dashboard/">
+
+            {% if form.errors %}
+                <div class="error-box">Foydalanuvchi nomi yoki parol xato!</div>
+            {% endif %}
+
+            <div class="input-group">
+                <label>Foydalanuvchi nomi</label>
+                {{ form.username }}
+            </div>
+            <div class="input-group">
+                <label>Parol</label>
+                {{ form.password }}
+            </div>
+
+            <button type="submit" class="btn-submit">Kirish</button>
+        </form>
+    </div>
+
+    <script>
+        function setRole(role) {
+            const userBtn = document.getElementById('userBtn');
+            const adminBtn = document.getElementById('adminBtn');
+            const nextInput = document.getElementById('next_url');
+            
+            if (role === 'admin') {
+                adminBtn.classList.add('active');
+                userBtn.classList.remove('active');
+                nextInput.value = '/admin/'; // Admin panelga yo'naltirish
+            } else {
+                userBtn.classList.add('active');
+                adminBtn.classList.remove('active');
+                nextInput.value = '/dashboard/'; // User dashboardga yo'naltirish
+            }
+        }
+
+        // Django form inputlariga klass va placeholder berish
+        document.querySelectorAll('input').forEach(input => {
+            if (input.type !== 'hidden' && input.type !== 'submit') {
+                input.className = ''; // Avvalgi klasslarni tozalash
+                input.placeholder = 'Kiriting...';
+            }
+        });
+    </script>
+</body>
+</html>

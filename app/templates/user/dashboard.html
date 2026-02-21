@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="uz">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Test Tizimi</title>
+    <style>
+        :root {
+            --bg: #f4f7f6;
+            --card-bg: #ffffff;
+            --text: #333333;
+            --header-blue: #1a73e8;
+            --border: #eeeeee;
+        }
+
+        [data-theme="dark"] {
+            --bg: #121212;
+            --card-bg: #1e1e1e;
+            --text: #e0e0e0;
+            --header-blue: #3498db;
+            --border: #333333;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            transition: 0.3s;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        .user-card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border: 1px solid var(--border);
+        }
+
+        .user-info h1 {
+            margin: 0;
+            color: var(--header-blue);
+            font-size: 24px;
+        }
+
+        .actions-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .theme-toggle {
+            padding: 10px 18px;
+            border-radius: 25px;
+            border: 1px solid var(--border);
+            background: var(--card-bg);
+            color: var(--text);
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg);
+        }
+
+        .logout-btn {
+            color: #d93025;
+            text-decoration: none;
+            font-weight: bold;
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 16px;
+        }
+
+        .logout-btn:hover {
+            text-decoration: underline;
+        }
+
+        .subjects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .subject-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        }
+
+        .test-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .test-item:last-child {
+            border-bottom: none;
+        }
+
+        .btn-start {
+            background: var(--header-blue);
+            color: white;
+            text-decoration: none;
+            padding: 8px 18px;
+            border-radius: 6px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .btn-start:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="user-card">
+            <div class="user-info">
+                <h1>Salom, {{ user.get_full_name|default:user.username }}!</h1>
+                <p>Guruh: <strong>{{ user.group.name|default:"Guruh biriktirilmagan" }}</strong></p>
+            </div>
+            
+            <div class="actions-group">
+                <button class="theme-toggle" onclick="toggleTheme()">
+                    <span id="theme-icon">🌙</span> <span id="theme-text">Tungi rejim</span>
+                </button>
+
+                <form id="logout-form" action="{% url 'logout' %}" method="post" style="display: none;">
+                    {% csrf_token %}
+                </form>
+                <button type="button" class="logout-btn" onclick="document.getElementById('logout-form').submit();">
+                    Chiqish
+                </button>
+            </div>
+        </div>
+
+        <h2 style="border-left: 5px solid var(--header-blue); padding-left: 15px; margin-bottom: 25px;">
+            Mavjud fanlar va testlar
+        </h2>
+
+        <div class="subjects-grid">
+            {% for subject in subjects %}
+            <div class="subject-card">
+                <h3 style="margin-top:0; color: var(--header-blue);">{{ subject.name }}</h3>
+
+                {% for t in subject.test_set.all %}
+                <div class="test-item">
+                    <span>{{ t.title }}</span>
+
+                    {% if t.id in finished_test_ids %}
+                    <span style="background: rgba(26, 115, 232, 0.1); color: var(--header-blue); padding: 5px 12px; border-radius: 4px; font-weight: bold; font-size: 13px;">
+                        ✓ Bajarildi
+                    </span>
+                    {% else %}
+                    <a href="{% url 'take_test' t.id %}" class="btn-start">Start</a>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <p style="opacity:0.6; font-style:italic; font-size: 14px;">Hozircha testlar yo'q</p>
+                {% endfor %}
+            </div>
+            {% empty %}
+            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; opacity: 0.6;">
+                <p>Sizning guruhingiz uchun fanlar topilmadi.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            const text = document.getElementById('theme-text');
+
+            if (html.getAttribute('data-theme') === 'dark') {
+                html.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+                icon.innerText = "🌙";
+                text.innerText = "Tungi rejim";
+            } else {
+                html.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+                icon.innerText = "☀️";
+                text.innerText = "Kunduzgi rejim";
+            }
+        }
+
+        // Sahifa yuklanganda mavzuni tekshirish
+        window.onload = function () {
+            if (localStorage.getItem('theme') === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                document.getElementById('theme-icon').innerText = "☀️";
+                document.getElementById('theme-text').innerText = "Kunduzgi rejim";
+            }
+        };
+    </script>
+
+</body>
+</html>

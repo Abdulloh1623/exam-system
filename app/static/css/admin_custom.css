@@ -1,0 +1,90 @@
+/* 1. ASOSIY DASHBOARDDA CHAP MENYUNI YASHIRISH */
+/* Jazzmin index sahifasida body'ga 'dashboard' klassini beradi */
+body.dashboard .main-sidebar { 
+    display: none !important; 
+}
+body.dashboard .content-wrapper { 
+    margin-left: 0 !important; 
+}
+
+/* 2. OQ MAYDONLARNI (KARTALARNI) PREDATOR USLUBIDA QORAYTIRISH */
+body.dark-mode .card, 
+body.dark-mode .info-box,
+body.dark-mode .content-wrapper {
+    background-color: #1a1c1e !important; /* Fon qorong'u */
+    color: #e0e0e0 !important;
+    border: 1px solid #333 !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
+}
+
+/* Kartalarning sarlavha qismi */
+body.dark-mode .card-header {
+    background-color: #25282c !important;
+    border-bottom: 1px solid #333 !important;
+}
+
+/* APP va Authentication bo'limlari sarlavhasi */
+body.dark-mode .card-title {
+    color: #3498db !important; /* Moviy rang */
+    font-weight: bold !important;
+    text-transform: uppercase;
+    font-size: 14px;
+}
+
+/* 3. TUGMALAR VA JADVALLARNI IXCHAMLASHTIRISH */
+.btn-success, .btn-info {
+    border-radius: 4px !important;
+    font-weight: 600 !important;
+    padding: 5px 12px !important;
+}
+
+/* 4. ICHKI BO'LIMLARDA MENYUNING KO'RINISHI */
+/* Agar 'dashboard' klassi bo'lmasa (ya'ni ichki sahifada bo'lsak) menyu chiqadi */
+body:not(.dashboard) .main-sidebar {
+    display: block !important;
+    background-color: #1a1c1e !important;
+}
+
+/* Scrollbar dizayni */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #1a1c1e; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+.field-password .help, 
+.field-password div.readonly {
+    font-size: 0 !important; /* Matnni o'chiradi */
+}
+
+/* "Reset password" havolasini qayta tiklash (chiroyli tugma ko'rinishida) */
+.field-password .help a, 
+.field-password div.readonly a {
+    font-size: 14px !important;
+    display: inline-block;
+    background-color: #3498db;
+    color: white !important;
+    padding: 6px 15px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+.field-password .help a::before {
+    content: "Parolni o'zgartirish: ";
+    font-weight: normal;
+}
+
+/* 2. Ortiqcha va ishlamaydigan tablarni (Shaxsiy ma'lumotlar va h.k.) yashirish */
+.nav-tabs {
+    display: none !important; /* Tablar satrini butunlay olib tashlaydi */
+}
+
+/* Tablar o'rniga ma'lumotlar ketma-ket (flat) chiqishi uchun */
+.tab-content > .tab-pane {
+    display: block !important;
+    opacity: 1 !important;
+}
+
+/* 3. Tahrirlash oynasidagi sarlavhalarni Predator ko'k rangiga o'tkazish */
+body.dark-mode .card-header {
+    border-left: 4px solid #3498db !important;
+}

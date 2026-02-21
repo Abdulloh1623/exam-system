@@ -1,0 +1,18 @@
+# Python kesh fayllari
+__pycache__/
+*.py[cod]
+
+# Virtual muhit (Hali yaratmasangiz ham ro'yxatda tursin)
+venv/
+env/
+ENV/
+
+# Ma'lumotlar bazasi
+db.sqlite3
+
+# Statik va media fayllar
+staticfiles/
+media/
+
+# Muhit o'zgaruvchilari
+.env
