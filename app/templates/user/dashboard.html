@@ -168,6 +168,7 @@
             <div class="subject-card">
                 <h3 style="margin-top:0; color: var(--header-blue);">{{ subject.name }}</h3>
 
+                {% comment %}tests linked via FK subject{% endcomment %}
                 {% for t in subject.test_set.all %}
                 <div class="test-item">
                     <span>{{ t.title }}</span>
@@ -180,6 +181,22 @@
                     <a href="{% url 'take_test' t.id %}" class="btn-start">Start</a>
                     {% endif %}
                 </div>
+                {% endfor %}
+                {% comment %}tests linked via M2M subjects (avoid duplicates){% endcomment %}
+                {% for t in subject.tests.all %}
+                    {% if t not in subject.test_set.all %}
+                    <div class="test-item">
+                        <span>{{ t.title }}</span>
+
+                        {% if t.id in finished_test_ids %}
+                        <span style="background: rgba(26, 115, 232, 0.1); color: var(--header-blue); padding: 5px 12px; border-radius: 4px; font-weight: bold; font-size: 13px;">
+                            ✓ Bajarildi
+                        </span>
+                        {% else %}
+                        <a href="{% url 'take_test' t.id %}" class="btn-start">Start</a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
                 {% empty %}
                 <p style="opacity:0.6; font-style:italic; font-size: 14px;">Hozircha testlar yo'q</p>
                 {% endfor %}

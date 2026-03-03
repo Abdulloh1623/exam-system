@@ -164,13 +164,22 @@
                     <td><span style="opacity: 0.8;">{{ r.user.group.name|default:"--" }}</span></td>
                     <td>
                         <div>{{ r.test.title }}</div>
-                        <small style="color: var(--stat-accent);">{{ r.test.subject.name }}</small>
+                        <small style="color: var(--stat-accent);">
+                            {% if r.test.subject %}
+                                {{ r.test.subject.name }}
+                            {% else %}
+                                {% for s in r.test.subjects.all %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                            {% endif %}
+                        </small>
                     </td>
                     <td>
                         <span class="badge" style="background: {% if r.percentage >= 80 %}#2ecc71{% elif r.percentage >= 50 %}#f1c40f{% else %}#e74c3c{% endif %};">
                             {{ r.percentage }}%
                         </span>
                         <div style="font-size: 11px; margin-top: 5px; opacity: 0.7;">({{ r.correct_answers }}/{{ r.total_questions }})</div>
+                        {% if r.weighted_score %}
+                        <div style="font-size: 11px; margin-top: 2px; opacity: 0.7;">Ball: {{ r.weighted_score }}</div>
+                        {% endif %}
                     </td>
                     <td style="text-align: right;">
                         <div>{{ r.date_taken|date:"d.m.Y" }}</div>

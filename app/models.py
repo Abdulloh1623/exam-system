@@ -27,6 +27,15 @@ class User(AbstractUser):
 # 3. Fanlar
 class Subject(models.Model):
     name = models.CharField(max_length=100, verbose_name="Fan nomi")
+    # yeni: vaznli ballar uchun decimal maydon
+    point_value = models.DecimalField(
+        max_digits=4,
+        decimal_places=1,
+        default=1.0,
+        verbose_name="Ball qiymati",
+        help_text="Savol uchun to‘g‘ri javob bo‘lganda qancha ball qo‘shilishini belgilaydi"
+    )
+
     class Meta:
         verbose_name = "Fan"
         verbose_name_plural = "Fanlar"
@@ -41,13 +50,25 @@ class Test(models.Model):
     class Meta:
         verbose_name = "Test"
         verbose_name_plural = "Testlar"
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+
+    # eski field (saqlab qolamiz, yangi testlar uchun bo‘sh bo‘lishi mumkin)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, null=True, blank=True)
+
+    # yangi: bir nechta fanlardan tashkil topgan testlar uchun
+    subjects = models.ManyToManyField(Subject, blank=True, related_name='tests')
+
     title = models.CharField(max_length=200)
     # E108 xatosini tuzatish uchun 'duration_minutes' maydoni:
     duration_minutes = models.PositiveIntegerField(default=30) 
     
     def __str__(self):
-        return f"{self.subject.name} | {self.title}"
+        # bir nechta fan bo‘lsa ularning nomlarini birlashtiramiz
+        if self.subjects.exists():
+            subj_names = ", ".join([s.name for s in self.subjects.all()])
+            return f"{subj_names} | {self.title}"
+        if self.subject:
+            return f"{self.subject.name} | {self.title}"
+        return self.title
 
 # 5. Savollar
 class Question(models.Model):
@@ -55,6 +76,8 @@ class Question(models.Model):
         verbose_name = "Savol"
         verbose_name_plural = "Savollar"
     test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name='questions')
+    # yangi: har bir savol qaysi fanga tegishli ekanini saqlash (ballar uchun)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, null=True, blank=True)
     text = models.TextField()
     def __str__(self):
         # Savolning birinchi 50 ta harfini ko'rsatadi
@@ -78,6 +101,8 @@ class Result(models.Model):
     correct_answers = models.IntegerField()
     total_questions = models.IntegerField()
     percentage = models.FloatField()
+    # og'irlik bo'yicha hisoblangan umumiy ball (Multi-subject testlar uchun)
+    weighted_score = models.DecimalField(max_digits=6, decimal_places=2, default=0)
     date_taken = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
