@@ -412,24 +412,26 @@ def leaderboard(request, test_id):
     })
     
 def custom_login(request):
+    # Sahifa birinchi marta ochilganda bo'sh forma yaratiladi
+    form = AuthenticationForm() 
+
     if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        # Login sahifasidan kelayotgan 'next' qiymatini olamiz
-        next_url = request.POST.get('next', 'dashboard') 
-
-        user = authenticate(request, username=username, password=password)
-
-        if user is not None:
+        # Formadan kelgan ma'lumotlarni qabul qilish
+        form = AuthenticationForm(request, data=request.POST)
+        
+        if form.is_valid():
+            user = form.get_user()
             login(request, user)
 
             user.session_token = str(uuid.uuid4())
             user.save(update_fields=['session_token'])
             request.session['session_token'] = user.session_token
 
-            # Endi hardkod qilingan 'dashboard' o'rniga dinamik next_url ishlatiladi
-            return redirect(next_url) 
+            # JavaScript orqali tanlangan rolni (next) hisobga olish
+            next_url = request.POST.get('next', 'dashboard')
+            return redirect(next_url)
         else:
             messages.error(request, "Login yoki parol noto'g'ri")
 
-    return render(request, 'registration/login.html')
+    # MUHIM: {'form': form} context'ni qo'shib yuborish shart
+    return render(request, 'registration/login.html', {'form': form})
