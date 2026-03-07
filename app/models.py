@@ -1,9 +1,5 @@
-from urllib import request
-
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-import uuid
-session_token = models.CharField(max_length=100, blank=True, null=True)
 
 
 # 1. Guruhlar
@@ -154,10 +150,6 @@ class CheatingLog(models.Model):
     event_type = models.CharField(max_length=50, choices=EVENT_TYPES)
     details = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-
-    user.session_token = str(uuid.uuid4())
-    user.save(update_fields=['session_token'])
-    request.session['session_token'] = user.session_token
-
+    
     def __str__(self):
         return f"{self.user.username} - {self.test.title} - {self.event_type}"
