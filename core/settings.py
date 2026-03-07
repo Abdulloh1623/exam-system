@@ -15,7 +15,7 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-default-key-fo
 # Renderda False, Predatoringizda True bo'ladi
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost','.onrender.com']
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
@@ -36,7 +36,14 @@ INSTALLED_APPS = [
 # 4. MIDDLEWARE (WhiteNoise statik fayllar uchun qo'shildi)
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
     'app.middleware.OneSessionPerUserMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 # whitenoise is optional (not needed for tests/development without staticfiles)
 try:
@@ -132,10 +139,12 @@ JAZZMIN_SETTINGS = {
     "language_chooser": False,
 }
 
+# 8. STATIC FILES (Render uchun to'g'ri sozlama)
 
-# 8. STATIK FAYLLAR (404 Build xatosini tuzatuvchi qism)
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
@@ -144,11 +153,6 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
-
-
-# Render serverida fayllar yig'iladigan papka
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
 
 # 9. TIL VA VAQT
 LANGUAGE_CODE = 'uz'
@@ -159,6 +163,10 @@ USE_TZ = True
 
 # 10. FOYDALANUVCHI MODELI VA LOGIN YO'LLARI
 AUTH_USER_MODEL = 'app.User'
+LOGIN_REDIRECT_URL = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/accounts/login/'
+
+LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 

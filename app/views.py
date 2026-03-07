@@ -1,25 +1,27 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import HttpResponse
-from django.db.models import Avg, Q, Max # Avg va Q filtrlash va hisoblash uchun kerak
-
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.http import require_POST
+from django.db.models import Avg, Q
 from django.contrib.auth import authenticate, login
-from django.shortcuts import render, redirect
+
+import json
+import random
 import uuid
 
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_exempt
-import json
+from .models import (
+    Test,
+    Question,
+    Subject,
+    Answer,
+    Result,
+    Group,
+    UserAnswer,
+    CheatingLog
+)
 
-# BU YERGA Group VA Subject QO'SHILDI:
-from .models import Test, Question, Subject, Answer, Result, Group, UserAnswer, CheatingLog
 from .utils import parse_bulk_questions
-
-import random
-from django.db.models import Prefetch
-
 
 try:
     import openpyxl
@@ -409,13 +411,16 @@ def leaderboard(request, test_id):
     })
     
 def custom_login(request):
+
     if request.method == 'POST':
+
         username = request.POST.get('username')
         password = request.POST.get('password')
 
         user = authenticate(request, username=username, password=password)
 
-        if user:
+        if user is not None:
+
             login(request, user)
 
             user.session_token = str(uuid.uuid4())
@@ -424,5 +429,8 @@ def custom_login(request):
             request.session['session_token'] = user.session_token
 
             return redirect('dashboard')
+
+        else:
+            messages.error(request, "Login yoki parol noto'g'ri")
 
     return render(request, 'registration/login.html')
