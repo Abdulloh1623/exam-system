@@ -132,6 +132,11 @@ JAZZMIN_SETTINGS = {
     "language_chooser": False,
 }
 
+
+# 8. STATIK FAYLLAR (404 Build xatosini tuzatuvchi qism)
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 # Render serverida fayllar yig'iladigan papka
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
