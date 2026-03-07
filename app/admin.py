@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.html import format_html
 from django.urls import reverse
-from .models import Group, User, Subject, Test, Question, Answer, UserAnswer
+from .models import Group, User, Subject, Test, Question, Answer, UserAnswer, CheatingLog
 
 # 1. Userlarni boshqarish
 # app/admin.py
@@ -77,6 +77,12 @@ class TestAdmin(admin.ModelAdmin):
         return format_html('<a class="button" style="background-color: #447e9b; color: white; padding: 5px 10px; border-radius: 4px;" href="{}">Bulk Upload</a>', url)
 
     upload_questions_link.short_description = "Savollarni yuklash"
+
+@admin.register(CheatingLog)
+class CheatingLogAdmin(admin.ModelAdmin):
+    list_display = ('user', 'test', 'event_type', 'created_at')
+    list_filter = ('event_type', 'test', 'created_at')
+    search_fields = ('user__username', 'test__title', 'details')
 
 # Ro'yxatdan o'tkazish
 admin.site.register(User, MyUserAdmin)

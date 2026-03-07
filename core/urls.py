@@ -28,4 +28,6 @@ urlpatterns = [
     path('accounts/logout/', auth_views.LogoutView.as_view(), name='logout'),
 
     path('result/<int:result_id>/', views.result_detail, name='result_detail'),
+
+    path('test/<int:test_id>/log-cheating/', views.log_cheating_event, name='log_cheating_event'),
 ]

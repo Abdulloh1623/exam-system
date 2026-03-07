@@ -1,16 +1,20 @@
 <!DOCTYPE html>
 <html lang="uz">
+
 <head>
     <meta charset="UTF-8">
     <title>{{ test.title }}</title>
     <style>
-        /* 1. CSS O'zgaruvchilari (Day/Night rejimlar uchun) */
         :root {
             --bg: #f4f7f6;
             --container-bg: #ffffff;
             --text: #333333;
             --border: #dddddd;
             --card-sub: #fafafa;
+            --primary: #3498db;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --warning-bg: linear-gradient(135deg, #fff8e1, #fff3cd);
         }
 
         [data-theme="dark"] {
@@ -19,138 +23,507 @@
             --text: #e0e0e0;
             --border: #333333;
             --card-sub: #252525;
+            --warning-bg: linear-gradient(135deg, #2c2416, #3a2e1b);
         }
 
-        body { background-color: var(--bg); color: var(--text); font-family: sans-serif; transition: 0.3s; margin: 20px; }
-        .container { max-width: 850px; margin: auto; background: var(--container-bg); padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 15px; }
-        .timer { font-size: 26px; font-weight: bold; color: #e74c3c; }
-        
-        .nav-circles { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; }
-        .circle { 
-            width: 38px; height: 38px; border-radius: 50%; border: 2px solid var(--border); 
-            display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; 
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: sans-serif;
+            transition: 0.3s;
+            margin: 20px;
         }
-        .circle.active { border-color: #3498db; background: #3498db; color: white; }
-        .circle.answered { background: #2ecc71; border-color: #2ecc71; color: white; }
 
-        .question-item { display: none; margin: 20px 0; padding: 20px; border: 1px solid var(--border); border-radius: 10px; background: var(--card-sub); }
-        .question-item.active { display: block !important; } 
+        .container {
+            max-width: 850px;
+            margin: auto;
+            background: var(--container-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
 
-        .option { display: block; margin: 12px 0; padding: 15px; background: var(--container-bg); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; }
-        
-        .theme-btn { padding: 8px 15px; border-radius: 20px; border: 1px solid var(--border); cursor: pointer; background: var(--container-bg); color: var(--text); margin-bottom: 10px; }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 15px;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .timer {
+            font-size: 26px;
+            font-weight: bold;
+            color: var(--danger);
+        }
+
+        .warning-box {
+            margin-top: 15px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+            font-size: 14px;
+        }
+
+        .nav-circles {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .circle {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .circle.active {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: white;
+        }
+
+        .circle.answered {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        .question-item {
+            display: none;
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--card-sub);
+        }
+
+        .question-item.active {
+            display: block !important;
+        }
+
+        .option {
+            display: block;
+            margin: 12px 0;
+            padding: 15px;
+            background: var(--container-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .theme-btn {
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            background: var(--container-bg);
+            color: var(--text);
+            margin-bottom: 10px;
+        }
+
+        .action-btn {
+            padding: 12px 22px;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: bold;
+        }
+
+        .next-btn {
+            background: var(--primary);
+        }
+
+        .submit-btn {
+            background: var(--success);
+            display: none;
+        }
+
+        .intro-screen {
+            max-width: 850px;
+            margin: 40px auto;
+            background: var(--container-bg);
+            border-radius: 20px;
+            padding: 40px 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .intro-title {
+            font-size: 34px;
+            font-weight: 800;
+            margin-bottom: 30px;
+            color: var(--danger);
+        }
+
+        .intro-subtitle {
+            font-size: 18px;
+            margin-bottom: 25px;
+            opacity: 0.85;
+        }
+
+        .quote-box {
+            background: var(--warning-bg);
+            border: 1px solid #f5d78e;
+            border-radius: 18px;
+            padding: 22px;
+            margin: 18px 0;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+        }
+
+        .quote-text {
+            font-size: 24px;
+            line-height: 1.6;
+            font-weight: 700;
+        }
+
+        .start-btn {
+            margin-top: 28px;
+            background: linear-gradient(135deg, #1e88e5, #1565c0);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 16px 34px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(21, 101, 192, 0.35);
+        }
+
+        .start-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .test-wrapper {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .intro-title {
+                font-size: 26px;
+            }
+
+            .quote-text {
+                font-size: 19px;
+            }
+
+            .container,
+            .intro-screen {
+                padding: 20px;
+            }
+        }
     </style>
 </head>
+
 <body id="body-tag">
 
-<div class="container">
-    <button class="theme-btn" onclick="toggleTheme()">🌓 Rejimni almashtirish</button>
-    
-    <div class="header">
-        <h2>{{ test.title }}</h2>
-        <div style="font-size:14px; opacity:0.7;">
-            {% if test.subject %}
-                {{ test.subject.name }}
-            {% else %}
-                {% for s in test.subjects.all %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
-            {% endif %}
+    <div id="intro-screen" class="intro-screen">
+        <div class="intro-title">Test boshlanishidan oldin diqqat bilan o‘qing</div>
+        <div class="intro-subtitle">{{ test.title }}</div>
+
+        <div class="quote-box">
+            <div class="quote-text">Kamera yo'q lekin Alloh ko'rib turipti !</div>
         </div>
-        <div class="timer" id="timer_box">00:00</div>
+
+        <div class="quote-box">
+            <div class="quote-text">Ko'chirish xotirani emas, vijdonni o'chiradi !</div>
+        </div>
+
+        <div class="quote-box">
+            <div class="quote-text">Ko'chirsang javobing emas, taqdiring o'zgaradi !</div>
+        </div>
+
+        <button class="start-btn" type="button" onclick="startTest()">Testni boshlash</button>
     </div>
 
-    <div class="nav-circles">
-        {% for q in questions %}
-            <div class="circle" id="circle-{{ forloop.counter }}" onclick="showQ({{ forloop.counter }})">{{ forloop.counter }}</div>
-        {% endfor %}
-    </div>
+    <div id="test-wrapper" class="test-wrapper">
+        <div class="container">
+            <button class="theme-btn" onclick="toggleTheme()" type="button">Rejimni almashtirish</button>
 
-    <form id="test_form" method="POST">
-        {% csrf_token %}
-        {% for q in questions %}
-            <div class="question-item" id="q-{{ forloop.counter }}">
-                <h3>{{ forloop.counter }}. {{ q.text }}</h3>
-                {% for a in q.answers.all %}
-                    <label class="option">
-                        <input type="radio" name="q{{ q.id }}" value="{{ a.id }}" onchange="setAnswered({{ forloop.parentloop.counter }})" required>
-                        <span>{{ a.text }}</span>
-                    </label>
+            <div class="header">
+                <h2>{{ test.title }}</h2>
+                <div style="font-size:14px; opacity:0.7;">
+                    {% if test.subject %}
+                    {{ test.subject.name }}
+                    {% else %}
+                    {% for s in test.subjects.all %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                    {% endif %}
+                </div>
+                <div class="timer" id="timer_box">00:00</div>
+            </div>
+
+            <div class="warning-box">
+                Test davomida boshqa oynaga o'tish, nusxa olish, qo'yish va ekran rejimini buzish holatlari nazorat
+                qilinadi.
+            </div>
+
+            <div class="nav-circles">
+                {% for q in questions %}
+                <div class="circle" id="circle-{{ forloop.counter }}" onclick="showQ({{ forloop.counter }})">
+                    {{ forloop.counter }}
+                </div>
                 {% endfor %}
             </div>
-        {% endfor %}
 
-        <div style="margin-top:20px; display:flex; justify-content:space-between;">
-            <b id="counter_text"></b>
-            <button type="button" id="next-btn" style="padding:10px 20px; background:#3498db; color:white; border:none; border-radius:5px; cursor:pointer;">Keyingi →</button>
-            <button type="submit" id="submit-btn" style="padding:10px 20px; background:#2ecc71; color:white; border:none; border-radius:5px; display:none;">Yakunlash ✓</button>
+            <form id="test_form" method="POST">
+                {% csrf_token %}
+
+                {% for q in questions %}
+                <div class="question-item" id="q-{{ forloop.counter }}">
+                    <h3>{{ forloop.counter }}. {{ q.text }}</h3>
+
+                    {% for a in q.shuffled_answers %}
+                    <label class="option">
+                        <input type="radio" name="q{{ q.id }}" value="{{ a.id }}"
+                            onchange="setAnswered({{ forloop.parentloop.counter }})">
+                        <span>{{ a.text }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+
+                <div
+                    style="margin-top:20px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+                    <b id="counter_text"></b>
+
+                    <button type="button" id="next-btn" class="action-btn next-btn">Keyingi →</button>
+                    <button type="submit" id="submit-btn" class="action-btn submit-btn">Yakunlash</button>
+                </div>
+            </form>
         </div>
-    </form>
-</div>
+    </div>
 
-<script>
-    var current = 1;
-    var total = parseInt("{{ questions.count }}");
-    var seconds = parseInt("{{ duration_seconds }}");
+    <script>
+        let current = 1;
+        let total = parseInt("{{ questions|length }}");
+        let seconds = parseInt("{{ duration_seconds }}");
+        let tabSwitchCount = 0;
+        const maxTabSwitch = 2;
+        let autoSubmitting = false;
+        let timerStarted = false;
+        let timerInterval = null;
 
-    // 1. Theme Logic
-    function toggleTheme() {
-        const html = document.documentElement;
-        if (html.getAttribute('data-theme') === 'dark') {
-            html.removeAttribute('data-theme');
-            localStorage.setItem('theme', 'light');
-        } else {
-            html.setAttribute('data-theme', 'dark');
-            localStorage.setItem('theme', 'dark');
+        function toggleTheme() {
+            const html = document.documentElement;
+            if (html.getAttribute('data-theme') === 'dark') {
+                html.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            }
         }
-    }
-    if (localStorage.getItem('theme') === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
 
-    // 2. Timer Logic
-    setInterval(function() {
-        if (seconds <= 0) document.getElementById('test_form').submit();
-        else {
-            let m = Math.floor(seconds / 60);
-            let s = seconds % 60;
-            document.getElementById('timer_box').innerHTML = (m < 10 ? '0' : '') + m + ":" + (s < 10 ? '0' : '') + s;
-            seconds--;
+        if (localStorage.getItem('theme') === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
         }
-    }, 1000);
 
-    // 3. Question Logic
-    function showQ(n) {
-        document.querySelectorAll('.question-item').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.circle').forEach(el => el.classList.remove('active'));
-        document.getElementById('q-' + n).classList.add('active');
-        document.getElementById('circle-' + n).classList.add('active');
-        current = n;
-        updateUI();
-    }
+        function startTimer() {
+            if (timerStarted) return;
+            timerStarted = true;
 
-    function updateUI() {
-        document.getElementById('counter_text').innerText = "Savol: " + current + " / " + total;
-        const answered = document.querySelectorAll('.circle.answered').length;
-        document.getElementById('submit-btn').style.display = (answered === total) ? 'block' : 'none';
-        
-        const nextBtn = document.getElementById('next-btn');
-        if (current === total && answered < total) {
-            nextBtn.innerText = "Bo'sh savolga qaytish";
-            nextBtn.onclick = function() {
-                let firstEmpty = document.querySelector('.circle:not(.answered)');
-                if (firstEmpty) showQ(parseInt(firstEmpty.innerText));
-            };
-        } else {
-            nextBtn.innerText = "Keyingi →";
-            nextBtn.onclick = function() { showQ(current + 1); };
-            nextBtn.style.display = (current === total) ? 'none' : 'block';
+            timerInterval = setInterval(function () {
+                if (seconds <= 0) {
+                    clearInterval(timerInterval);
+                    safeSubmitForm();
+                } else {
+                    let m = Math.floor(seconds / 60);
+                    let s = seconds % 60;
+                    document.getElementById('timer_box').innerHTML =
+                        (m < 10 ? '0' : '') + m + ":" + (s < 10 ? '0' : '') + s;
+                    seconds--;
+                }
+            }, 1000);
         }
-    }
 
-    function setAnswered(n) {
-        document.getElementById('circle-' + n).classList.add('answered');
-        updateUI();
-    }
+        function startTest() {
+            document.getElementById('intro-screen').style.display = 'none';
+            document.getElementById('test-wrapper').style.display = 'block';
+            showQ(1);
+            startTimer();
+            enterFullscreen();
+        }
 
-    window.onload = function() { showQ(1); };
-</script>
+        function showQ(n) {
+            if (n < 1 || n > total) return;
+
+            document.querySelectorAll('.question-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.circle').forEach(el => el.classList.remove('active'));
+
+            document.getElementById('q-' + n).classList.add('active');
+            document.getElementById('circle-' + n).classList.add('active');
+
+            current = n;
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('counter_text').innerText = "Savol: " + current + " / " + total;
+
+            const nextBtn = document.getElementById('next-btn');
+            const answered = document.querySelectorAll('.circle.answered').length;
+
+            nextBtn.style.display = 'block';
+
+            if (answered === total) {
+                nextBtn.style.display = 'none';
+                return;
+            }
+
+            if (current < total) {
+                nextBtn.innerText = "Keyingi →";
+                nextBtn.onclick = function () {
+                    showQ(current + 1);
+                };
+            } else {
+                nextBtn.innerText = "Javob berilmagan savolga o'tish";
+                nextBtn.onclick = function () {
+                    let firstEmpty = document.querySelector('.circle:not(.answered)');
+                    if (firstEmpty) {
+                        let num = parseInt(firstEmpty.innerText.trim());
+                        showQ(num);
+                    }
+                };
+            }
+        }
+
+        function setAnswered(n) {
+            document.getElementById('circle-' + n).classList.add('answered');
+            updateUI();
+
+            const answered = document.querySelectorAll('.circle.answered').length;
+            if (answered === total) {
+                setTimeout(function () {
+                    safeSubmitForm();
+                }, 400);
+            }
+        }
+
+        function safeSubmitForm() {
+            if (autoSubmitting) return;
+            autoSubmitting = true;
+            document.getElementById('test_form').submit();
+        }
+
+        document.addEventListener('contextmenu', function (e) {
+            e.preventDefault();
+            logCheating('right_click', 'Right click urinish');
+        });
+
+        document.addEventListener('copy', function (e) {
+            e.preventDefault();
+            logCheating('copy_attempt', 'Copy urinish');
+        });
+
+        document.addEventListener('cut', function (e) {
+            e.preventDefault();
+            logCheating('cut_attempt', 'Cut urinish');
+        });
+
+        document.addEventListener('paste', function (e) {
+            e.preventDefault();
+            logCheating('paste_attempt', 'Paste urinish');
+        });
+
+        document.addEventListener('keydown', function (e) {
+            const key = e.key.toUpperCase();
+
+            if (
+                e.key === 'F12' ||
+                (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(key)) ||
+                (e.ctrlKey && key === 'U') ||
+                (e.ctrlKey && key === 'S') ||
+                (e.ctrlKey && key === 'P')
+            ) {
+                e.preventDefault();
+                logCheating('devtools_attempt', 'DevTools yoki source shortcut urinish');
+            }
+        });
+
+        document.addEventListener('visibilitychange', function () {
+            if (!timerStarted || autoSubmitting) return;
+
+            if (document.hidden) {
+                tabSwitchCount++;
+                logCheating('tab_switch', 'Foydalanuvchi boshqa tab yoki oynaga o‘tdi');
+                alert("Siz test oynasidan chiqdingiz. Bu holat qayd etildi.");
+
+                if (tabSwitchCount >= maxTabSwitch) {
+                    alert("Siz bir necha marta test oynasidan chiqdingiz. Test avtomatik yakunlanadi.");
+                    safeSubmitForm();
+                }
+            }
+        });
+
+        async function enterFullscreen() {
+            const elem = document.documentElement;
+            if (!document.fullscreenElement) {
+                try {
+                    await elem.requestFullscreen();
+                } catch (err) {
+                    console.log("Fullscreen yoqilmadi");
+                }
+            }
+        }
+
+        document.addEventListener('fullscreenchange', function () {
+            if (!timerStarted || autoSubmitting) return;
+
+            if (!document.fullscreenElement) {
+                logCheating('fullscreen_exit', 'Foydalanuvchi fullscreen rejimdan chiqdi');
+                alert("Iltimos, testni fullscreen rejimda davom ettiring.");
+            }
+        });
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function logCheating(eventType, details = '') {
+            fetch("{% url 'log_cheating_event' test.id %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                },
+                body: JSON.stringify({
+                    event_type: eventType,
+                    details: details
+                })
+            }).catch(function (error) {
+                console.log("Cheating log yuborilmadi:", error);
+            });
+        }
+
+        document.getElementById('test_form').addEventListener('submit', function () {
+            autoSubmitting = true;
+        });
+    </script>
 </body>
+
 </html>

@@ -4,9 +4,18 @@ from django.contrib import messages
 from django.http import HttpResponse
 from django.db.models import Avg, Q # Avg va Q filtrlash va hisoblash uchun kerak
 
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+import json
+
 # BU YERGA Group VA Subject QO'SHILDI:
-from .models import Test, Question, Subject, Answer, Result, Group, UserAnswer
+from .models import Test, Question, Subject, Answer, Result, Group, UserAnswer, CheatingLog
 from .utils import parse_bulk_questions
+
+import random
+from django.db.models import Prefetch
+
 
 try:
     import openpyxl
@@ -79,18 +88,80 @@ def take_test(request, test_id):
             </div>
         """)
 
-    questions = test.questions.select_related('subject').prefetch_related('answers')
+    session_key = f"test_session_{request.user.id}_{test.id}"
+
+    all_questions = list(
+        test.questions.select_related('subject').prefetch_related('answers')
+    )
+
+    if not all_questions:
+        return HttpResponse("""
+            <div style="text-align:center; margin-top:50px; font-family:sans-serif;">
+                <h1>Testda savollar yo'q</h1>
+                <a href="/">Dashboardga qaytish</a>
+            </div>
+        """)
+
+    if request.method == 'GET':
+        if len(all_questions) > 30:
+            selected_questions = random.sample(all_questions, 30)
+        else:
+            selected_questions = all_questions[:]
+
+        random.shuffle(selected_questions)
+
+        session_data = {
+            "question_ids": [q.id for q in selected_questions],
+            "answers_order": {}
+        }
+
+        for q in selected_questions:
+            answer_ids = list(q.answers.values_list('id', flat=True))
+            random.shuffle(answer_ids)
+            session_data["answers_order"][str(q.id)] = answer_ids
+
+        request.session[session_key] = session_data
+        request.session.modified = True
+
+    session_data = request.session.get(session_key)
+
+    if not session_data:
+        return redirect('take_test', test_id=test.id)
+
+    question_ids = session_data.get("question_ids", [])
+    answers_order = session_data.get("answers_order", {})
+
+    questions_dict = {
+        q.id: q for q in test.questions.select_related('subject').prefetch_related('answers').filter(id__in=question_ids)
+    }
+
+    ordered_questions = []
+    for qid in question_ids:
+        q = questions_dict.get(qid)
+        if not q:
+            continue
+
+        answer_map = {a.id: a for a in q.answers.all()}
+        ordered_answers = []
+
+        for aid in answers_order.get(str(q.id), []):
+            ans = answer_map.get(aid)
+            if ans:
+                ordered_answers.append(ans)
+
+        q.shuffled_answers = ordered_answers
+        ordered_questions.append(q)
 
     if request.method == 'POST':
         per_subj = {}
-        total_questions = questions.count()
+        total_questions = len(ordered_questions)
         user_answers_to_create = []
 
         correct_count = 0
         weighted_score = 0
         max_score = 0
 
-        for q in questions:
+        for q in ordered_questions:
             subj = q.subject or test.subject
 
             if subj not in per_subj:
@@ -143,11 +214,15 @@ def take_test(request, test_id):
                 is_correct=item['is_correct']
             )
 
+        if session_key in request.session:
+            del request.session[session_key]
+            request.session.modified = True
+
         return redirect('result_detail', result_id=result.id)
 
     return render(request, 'user/take_test.html', {
         'test': test,
-        'questions': questions,
+        'questions': ordered_questions,
         'duration_seconds': test.duration_minutes * 60
     })
 
@@ -283,3 +358,37 @@ def result_detail(request, result_id):
         'result': result,
         'detailed_answers': detailed_answers,
     })
+
+@login_required
+@require_POST
+def log_cheating_event(request, test_id):
+    test = get_object_or_404(Test, id=test_id)
+
+    try:
+        data = json.loads(request.body)
+        event_type = data.get('event_type')
+        details = data.get('details', '')
+    except Exception:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+
+    allowed_events = {
+        'tab_switch',
+        'fullscreen_exit',
+        'right_click',
+        'copy_attempt',
+        'paste_attempt',
+        'cut_attempt',
+        'devtools_attempt',
+    }
+
+    if event_type not in allowed_events:
+        return JsonResponse({'success': False, 'error': 'Invalid event type'}, status=400)
+
+    CheatingLog.objects.create(
+        user=request.user,
+        test=test,
+        event_type=event_type,
+        details=details
+    )
+
+    return JsonResponse({'success': True})

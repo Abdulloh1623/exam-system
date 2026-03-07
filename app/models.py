@@ -126,3 +126,28 @@ class UserAnswer(models.Model):
 
     def __str__(self):
         return f"{self.result.user.username} - Savol {self.question.id}"
+    
+class CheatingLog(models.Model):
+    class Meta:
+        verbose_name = "Cheating log"
+        verbose_name_plural = "Cheating logs"
+        ordering = ['-created_at']
+
+    EVENT_TYPES = [
+        ('tab_switch', 'Boshqa tabga o‘tdi'),
+        ('fullscreen_exit', 'Fullscreen’dan chiqdi'),
+        ('right_click', 'Right click qildi'),
+        ('copy_attempt', 'Copy urindi'),
+        ('paste_attempt', 'Paste urindi'),
+        ('cut_attempt', 'Cut urindi'),
+        ('devtools_attempt', 'DevTools urindi'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cheating_logs')
+    test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name='cheating_logs')
+    event_type = models.CharField(max_length=50, choices=EVENT_TYPES)
+    details = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.test.title} - {self.event_type}"
