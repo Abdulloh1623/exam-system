@@ -36,6 +36,7 @@ INSTALLED_APPS = [
 # 4. MIDDLEWARE (WhiteNoise statik fayllar uchun qo'shildi)
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'app.middleware.OneSessionPerUserMiddleware',
 ]
 # whitenoise is optional (not needed for tests/development without staticfiles)
 try:

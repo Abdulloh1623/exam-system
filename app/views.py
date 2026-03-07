@@ -2,7 +2,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse
-from django.db.models import Avg, Q # Avg va Q filtrlash va hisoblash uchun kerak
+from django.db.models import Avg, Q, Max # Avg va Q filtrlash va hisoblash uchun kerak
+
+from django.contrib.auth import authenticate, login
+from django.shortcuts import render, redirect
+import uuid
 
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
@@ -132,7 +136,8 @@ def take_test(request, test_id):
     answers_order = session_data.get("answers_order", {})
 
     questions_dict = {
-        q.id: q for q in test.questions.select_related('subject').prefetch_related('answers').filter(id__in=question_ids)
+        q.id: q
+        for q in test.questions.select_related('subject').prefetch_related('answers').filter(id__in=question_ids)
     }
 
     ordered_questions = []
@@ -153,7 +158,6 @@ def take_test(request, test_id):
         ordered_questions.append(q)
 
     if request.method == 'POST':
-        per_subj = {}
         total_questions = len(ordered_questions)
         user_answers_to_create = []
 
@@ -162,12 +166,7 @@ def take_test(request, test_id):
         max_score = 0
 
         for q in ordered_questions:
-            subj = q.subject or test.subject
-
-            if subj not in per_subj:
-                per_subj[subj] = {'correct': 0, 'total': 0}
-
-            per_subj[subj]['total'] += 1
+            subj = q.subject or getattr(test, 'subject', None)
 
             selected_answer_id = request.POST.get(f'q{q.id}')
             selected_answer = None
@@ -182,9 +181,8 @@ def take_test(request, test_id):
                 if selected_answer and selected_answer.is_correct:
                     is_correct = True
                     correct_count += 1
-                    per_subj[subj]['correct'] += 1
 
-            point_value = subj.point_value if subj else 0
+            point_value = getattr(subj, 'point_value', 0) if subj else 0
             max_score += point_value
             if is_correct:
                 weighted_score += point_value
@@ -195,7 +193,10 @@ def take_test(request, test_id):
                 'is_correct': is_correct,
             })
 
-        percentage = (weighted_score / max_score) * 100 if max_score > 0 else 0
+        if max_score > 0:
+            percentage = (weighted_score / max_score) * 100
+        else:
+            percentage = (correct_count / total_questions * 100) if total_questions > 0 else 0
 
         result = Result.objects.create(
             user=request.user,
@@ -392,3 +393,36 @@ def log_cheating_event(request, test_id):
     )
 
     return JsonResponse({'success': True})
+
+def leaderboard(request, test_id):
+    test = get_object_or_404(Test, id=test_id)
+
+    top_results = (
+        Result.objects.filter(test=test)
+        .select_related('user')
+        .order_by('-percentage', '-weighted_score', 'date_taken')[:10]
+    )
+
+    return render(request, 'user/leaderboard.html', {
+        'test': test,
+        'top_results': top_results,
+    })
+    
+def custom_login(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        user = authenticate(request, username=username, password=password)
+
+        if user:
+            login(request, user)
+
+            user.session_token = str(uuid.uuid4())
+            user.save(update_fields=['session_token'])
+
+            request.session['session_token'] = user.session_token
+
+            return redirect('dashboard')
+
+    return render(request, 'registration/login.html')

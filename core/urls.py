@@ -24,10 +24,12 @@ urlpatterns = [
     path('test/<int:test_id>/', views.take_test, name='take_test'),
 
     # 4. AVTORIZATSIYA (KIRISH VA CHIQISH)
-    path('accounts/login/', auth_views.LoginView.as_view(), name='login'),
+    path('accounts/login/', views.custom_login, name='login'),
     path('accounts/logout/', auth_views.LogoutView.as_view(), name='logout'),
 
     path('result/<int:result_id>/', views.result_detail, name='result_detail'),
 
     path('test/<int:test_id>/log-cheating/', views.log_cheating_event, name='log_cheating_event'),
+
+    path('leaderboard/<int:test_id>/', views.leaderboard, name='leaderboard'),
 ]
