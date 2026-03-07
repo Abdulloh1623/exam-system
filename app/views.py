@@ -5,6 +5,7 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_POST
 from django.db.models import Avg, Q
 from django.contrib.auth import authenticate, login
+from django.contrib.auth.forms import AuthenticationForm 
 
 import json
 import random
@@ -411,26 +412,23 @@ def leaderboard(request, test_id):
     })
     
 def custom_login(request):
-
     if request.method == 'POST':
-
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-
-        user = authenticate(request, username=username, password=password)
-
-        if user is not None:
-
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
             login(request, user)
 
+            # Sessiya tokenini yaratish
             user.session_token = str(uuid.uuid4())
             user.save(update_fields=['session_token'])
-
             request.session['session_token'] = user.session_token
 
-            return redirect('dashboard')
-
+            # Yo'naltirish (admin yoki o'quvchi)
+            next_url = request.POST.get('next', 'dashboard')
+            return redirect(next_url)
         else:
             messages.error(request, "Login yoki parol noto'g'ri")
+    else:
+        form = AuthenticationForm()
 
-    return render(request, 'registration/login.html')
+    return render(request, 'registration/login.html', {'form': form})
