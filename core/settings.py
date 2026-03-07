@@ -101,17 +101,6 @@ if 'test' in sys.argv or 'pytest' in sys.argv:
         }
     }
 
-# during `manage.py test`, sqlite in-memory database is convenient and avoids
-# requiring a running Postgres instance; this mirrors common patterns.
-import sys
-if 'test' in sys.argv or 'pytest' in sys.argv:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': ':memory:',
-        }
-    }
-
 
 # 6. PAROL VALIDATSIYASI
 AUTH_PASSWORD_VALIDATORS = [
@@ -144,7 +133,7 @@ JAZZMIN_SETTINGS = {
 
 
 # 8. STATIK FAYLLAR (404 Build xatosini tuzatuvchi qism)
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / "static"] # Loyihangizdagi static papkasi
 
 # Render serverida fayllar yig'iladigan papka

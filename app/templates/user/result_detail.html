@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test natijasi</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 30px;
+            color: #222;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .summary-card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        }
+
+        .summary-card h1 {
+            margin-top: 0;
+            color: #1a73e8;
+        }
+
+        .meta {
+            line-height: 1.8;
+        }
+
+        .question-card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 18px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border-left: 6px solid #ccc;
+        }
+
+        .question-card.correct {
+            border-left-color: #1e8e3e;
+        }
+
+        .question-card.wrong {
+            border-left-color: #d93025;
+        }
+
+        .status {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .correct-text {
+            color: #1e8e3e;
+        }
+
+        .wrong-text {
+            color: #d93025;
+        }
+
+        .label {
+            font-weight: bold;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            text-decoration: none;
+            background: #1a73e8;
+            color: #fff;
+            padding: 10px 18px;
+            border-radius: 8px;
+        }
+
+        .answers-list {
+            margin: 8px 0 0 0;
+            padding-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="summary-card">
+            <h1>Test natijasi</h1>
+            <div class="meta">
+                <div><span class="label">Test:</span> {{ result.test.title }}</div>
+                <div><span class="label">To'g'ri javoblar:</span> {{ result.correct_answers }} / {{ result.total_questions }}</div>
+                <div><span class="label">Foiz:</span> {{ result.percentage }}%</div>
+                <div><span class="label">Umumiy ball:</span> {{ result.weighted_score }}</div>
+                <div><span class="label">Topshirilgan vaqt:</span> {{ result.date_taken|date:"d.m.Y H:i" }}</div>
+            </div>
+        </div>
+
+        {% for item in detailed_answers %}
+            <div class="question-card {% if item.is_correct %}correct{% else %}wrong{% endif %}">
+                <div class="status {% if item.is_correct %}correct-text{% else %}wrong-text{% endif %}">
+                    {% if item.is_correct %}
+                        To'g'ri bajarilgan
+                    {% else %}
+                        Xato bajarilgan
+                    {% endif %}
+                </div>
+
+                <div><span class="label">Savol:</span> {{ item.question_text }}</div>
+                <div style="margin-top:10px;"><span class="label">Sizning javobingiz:</span> {{ item.selected_answer }}</div>
+
+                {% if not item.is_correct %}
+                    <div style="margin-top:10px;">
+                        <span class="label">To'g'ri javob:</span>
+                        <ul class="answers-list">
+                            {% for ans in item.correct_answers %}
+                                <li>{{ ans }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <a href="{% url 'dashboard' %}" class="back-link">Dashboardga qaytish</a>
+    </div>
+</body>
+</html>

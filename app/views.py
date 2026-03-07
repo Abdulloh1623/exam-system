@@ -5,7 +5,7 @@ from django.http import HttpResponse
 from django.db.models import Avg, Q # Avg va Q filtrlash va hisoblash uchun kerak
 
 # BU YERGA Group VA Subject QO'SHILDI:
-from .models import Test, Question, Subject, Answer, Result, Group 
+from .models import Test, Question, Subject, Answer, Result, Group, UserAnswer
 from .utils import parse_bulk_questions
 
 try:
@@ -27,26 +27,49 @@ def bulk_upload_view(request, test_id):
 # 2. Foydalanuvchi asboblar paneli (Dashboard)
 @login_required
 def dashboard(request):
+    subject_cards = []
+
     if request.user.group:
-        # Guruhga tegishli fanlarni yuklash; old tests subject orqali, yangi multi-subject tests esa subjects m2m orqali
         subjects = Subject.objects.filter(groups=request.user.group).prefetch_related('test_set', 'tests')
-        # Foydalanuvchi topshirgan testlar ID ro'yxati
-        finished_test_ids = list(Result.objects.filter(user=request.user).values_list('test_id', flat=True))
-    else:
-        subjects = Subject.objects.none()
-        finished_test_ids = []
-    
+        finished_results = Result.objects.filter(user=request.user).select_related('test')
+        result_by_test_id = {result.test_id: result.id for result in finished_results}
+
+        for subject in subjects:
+            tests = []
+            seen_ids = set()
+
+            for t in subject.test_set.all():
+                tests.append({
+                    'id': t.id,
+                    'title': t.title,
+                    'is_finished': t.id in result_by_test_id,
+                    'result_id': result_by_test_id.get(t.id)
+                })
+                seen_ids.add(t.id)
+
+            for t in subject.tests.all():
+                if t.id not in seen_ids:
+                    tests.append({
+                        'id': t.id,
+                        'title': t.title,
+                        'is_finished': t.id in result_by_test_id,
+                        'result_id': result_by_test_id.get(t.id)
+                    })
+
+            subject_cards.append({
+                'name': subject.name,
+                'tests': tests
+            })
+
     return render(request, 'user/dashboard.html', {
-        'subjects': subjects,
-        'finished_test_ids': finished_test_ids
+        'subject_cards': subject_cards,
     })
 
 # 3. Test yechish oynasi va 1 martalik cheklov
 @login_required
 def take_test(request, test_id):
     test = get_object_or_404(Test, id=test_id)
-    
-    # Avval topshirgan bo'lsa kirishni taqiqlash
+
     if Result.objects.filter(user=request.user, test=test).exists():
         return HttpResponse("""
             <div style="text-align:center; margin-top:50px; font-family:sans-serif;">
@@ -56,69 +79,71 @@ def take_test(request, test_id):
             </div>
         """)
 
-    # collect all questions connected to this test
-    # for multi‑subject tests some questions may belong to different subjects
     questions = test.questions.select_related('subject').prefetch_related('answers')
 
     if request.method == 'POST':
-        # tally correct answers per subject
-        per_subj = {}  # subject -> {correct, total}
+        per_subj = {}
         total_questions = questions.count()
+        user_answers_to_create = []
+
+        correct_count = 0
+        weighted_score = 0
+        max_score = 0
 
         for q in questions:
             subj = q.subject or test.subject
+
             if subj not in per_subj:
                 per_subj[subj] = {'correct': 0, 'total': 0}
+
             per_subj[subj]['total'] += 1
 
             selected_answer_id = request.POST.get(f'q{q.id}')
+            selected_answer = None
+            is_correct = False
+
             if selected_answer_id:
-                is_correct = Answer.objects.filter(id=selected_answer_id, is_correct=True).exists()
-                if is_correct:
+                selected_answer = Answer.objects.filter(
+                    id=selected_answer_id,
+                    question=q
+                ).first()
+
+                if selected_answer and selected_answer.is_correct:
+                    is_correct = True
+                    correct_count += 1
                     per_subj[subj]['correct'] += 1
 
-        # compute weighted score and maximum possible
-        weighted_score = 0
-        max_score = 0
-        breakdown_lines = []
-        for subj, vals in per_subj.items():
-            pv = subj.point_value if subj else 0
-            subj_score = vals['correct'] * pv
-            subj_max = vals['total'] * pv
-            weighted_score += subj_score
-            max_score += subj_max
-            breakdown_lines.append((subj.name if subj else '---', vals['correct'], vals['total'], pv, subj_score))
+            point_value = subj.point_value if subj else 0
+            max_score += point_value
+            if is_correct:
+                weighted_score += point_value
+
+            user_answers_to_create.append({
+                'question': q,
+                'selected_answer': selected_answer,
+                'is_correct': is_correct,
+            })
 
         percentage = (weighted_score / max_score) * 100 if max_score > 0 else 0
 
-        # Natijani saqlash
-        Result.objects.create(
+        result = Result.objects.create(
             user=request.user,
             test=test,
-            correct_answers=sum(v['correct'] for v in per_subj.values()),
+            correct_answers=correct_count,
             total_questions=total_questions,
             percentage=round(percentage, 2),
             weighted_score=round(weighted_score, 2)
         )
 
-        # build simple breakdown html
-        breakdown_html = """
-            <ul style='text-align:left; display:inline-block;'>
-        """
-        for name, corr, tot, pv, score in breakdown_lines:
-            breakdown_html += f"<li>{name}: {corr}/{tot} × {pv} = {score:.1f}</li>"
-        breakdown_html += "</ul>"
+        for item in user_answers_to_create:
+            UserAnswer.objects.create(
+                result=result,
+                question=item['question'],
+                selected_answer=item['selected_answer'],
+                is_correct=item['is_correct']
+            )
 
-        return HttpResponse(f"""
-            <div style="font-family: sans-serif; text-align: center; margin-top: 50px;">
-                <h1>Test yakunlandi!</h1>
-                <p>To'g'ri javoblar: {sum(v['correct'] for v in per_subj.values())} / {total_questions}</p>
-                <p>Umumiy ball: {weighted_score:.1f}  (maksimal {max_score:.1f})</p>
-                <p>Natija: {percentage:.1f}%</p>
-                {breakdown_html}
-                <br><a href="/">Dashboardga qaytish</a>
-            </div>
-        """)
+        return redirect('result_detail', result_id=result.id)
 
     return render(request, 'user/take_test.html', {
         'test': test,
@@ -226,3 +251,35 @@ def export_results_excel(request):
     response['Content-Disposition'] = 'attachment; filename=Natijalar.xlsx'
     wb.save(response)
     return response
+
+@login_required
+def result_detail(request, result_id):
+    result = get_object_or_404(
+        Result.objects.select_related('test', 'user'),
+        id=result_id,
+        user=request.user
+    )
+
+    user_answers = result.user_answers.select_related(
+        'question',
+        'selected_answer'
+    ).prefetch_related(
+        'question__answers'
+    )
+
+    detailed_answers = []
+
+    for item in user_answers:
+        correct_answers = item.question.answers.filter(is_correct=True)
+
+        detailed_answers.append({
+            'question_text': item.question.text,
+            'selected_answer': item.selected_answer.text if item.selected_answer else "Javob belgilanmagan",
+            'is_correct': item.is_correct,
+            'correct_answers': [a.text for a in correct_answers],
+        })
+
+    return render(request, 'user/result_detail.html', {
+        'result': result,
+        'detailed_answers': detailed_answers,
+    })

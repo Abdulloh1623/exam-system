@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.html import format_html
 from django.urls import reverse
-from .models import Group, User, Subject, Test, Question, Answer
+from .models import Group, User, Subject, Test, Question, Answer, UserAnswer
 
 # 1. Userlarni boshqarish
 # app/admin.py
@@ -84,3 +84,4 @@ admin.site.register(Group)
 admin.site.register(Subject, SubjectAdmin)
 admin.site.register(Test, TestAdmin)
 admin.site.register(Question, QuestionAdmin)
+admin.site.register(UserAnswer)

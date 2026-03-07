@@ -107,3 +107,22 @@ class Result(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.test.title}"
+
+class UserAnswer(models.Model):
+    class Meta:
+        verbose_name = "Foydalanuvchi javobi"
+        verbose_name_plural = "Foydalanuvchi javoblari"
+
+    result = models.ForeignKey(Result, on_delete=models.CASCADE, related_name='user_answers')
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    selected_answer = models.ForeignKey(
+        Answer,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Tanlangan javob"
+    )
+    is_correct = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.result.user.username} - Savol {self.question.id}"
