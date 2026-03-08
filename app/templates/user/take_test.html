@@ -375,42 +375,39 @@
             document.getElementById('counter_text').innerText = "Savol: " + current + " / " + total;
 
             const nextBtn = document.getElementById('next-btn');
-            const answered = document.querySelectorAll('.circle.answered').length;
+            const submitBtn = document.getElementById('submit-btn');
+            const answeredCount = document.querySelectorAll('.circle.answered').length;
 
-            nextBtn.style.display = 'block';
-
-            if (answered === total) {
+            if (answeredCount === total) {
+                // Barcha savollar belgilangan bo'lsa, "Keyingi" yashiriladi va "Yakunlash" chiqadi
                 nextBtn.style.display = 'none';
-                return;
-            }
-
-            if (current < total) {
-                nextBtn.innerText = "Keyingi →";
-                nextBtn.onclick = function () {
-                    showQ(current + 1);
-                };
+                submitBtn.style.display = 'block';
             } else {
-                nextBtn.innerText = "Javob berilmagan savolga o'tish";
-                nextBtn.onclick = function () {
-                    let firstEmpty = document.querySelector('.circle:not(.answered)');
-                    if (firstEmpty) {
-                        let num = parseInt(firstEmpty.innerText.trim());
-                        showQ(num);
-                    }
-                };
+                // Barcha savollar belgilanmagan bo'lsa
+                nextBtn.style.display = 'block';
+                submitBtn.style.display = 'none';
+
+                if (current < total) {
+                    nextBtn.innerText = "Keyingi →";
+                    nextBtn.onclick = function () {
+                        showQ(current + 1);
+                    };
+                } else {
+                    nextBtn.innerText = "Javob berilmagan savolga o'tish";
+                    nextBtn.onclick = function () {
+                        let firstEmpty = document.querySelector('.circle:not(.answered)');
+                        if (firstEmpty) {
+                            let num = parseInt(firstEmpty.innerText.trim());
+                            showQ(num);
+                        }
+                    };
+                }
             }
         }
 
         function setAnswered(n) {
             document.getElementById('circle-' + n).classList.add('answered');
             updateUI();
-
-            const answered = document.querySelectorAll('.circle.answered').length;
-            if (answered === total) {
-                setTimeout(function () {
-                    safeSubmitForm();
-                }, 400);
-            }
         }
 
         function safeSubmitForm() {
