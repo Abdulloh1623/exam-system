@@ -83,7 +83,8 @@ class Question(models.Model):
     text = models.TextField()
     def __str__(self):
         # Savolning birinchi 50 ta harfini ko'rsatadi
-        return self.text[:50] + "..." if len(self.text) > 50 else self.text
+        text = str(self.text) if self.text else "Matnsiz savol"
+        return text[:50] + "..." if len(text) > 50 else text
 
 # 6. Javoblar (To'g'ri javob bitta yoki bir nechta bo'lishi mumkin)
 class Answer(models.Model):
