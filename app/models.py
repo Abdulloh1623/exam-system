@@ -63,14 +63,17 @@ class Test(models.Model):
     # E108 xatosini tuzatish uchun 'duration_minutes' maydoni:
     duration_minutes = models.PositiveIntegerField(default=30) 
     
-    def __str__(self):
-        # bir nechta fan bo‘lsa ularning nomlarini birlashtiramiz
+def __str__(self):
+    try:
+        title = str(self.title) if self.title else "Nomsiz test"
         if self.subjects.exists():
-            subj_names = ", ".join([s.name for s in self.subjects.all()])
-            return f"{subj_names} | {self.title}"
+            subj_names = ", ".join([str(s.name) for s in self.subjects.all()])
+            return f"{subj_names} | {title}"
         if self.subject:
-            return f"{self.subject.name} | {self.title}"
-        return self.title
+            return f"{str(self.subject.name)} | {title}"
+        return title
+    except Exception:
+        return str(self.title) if self.title else "Xatolik yuz bergan test"
 
 # 5. Savollar
 class Question(models.Model):

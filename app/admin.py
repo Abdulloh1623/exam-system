@@ -1,19 +1,16 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from django.utils.html import format_html
+from django.utils.html import format_html, escape
 from django.urls import reverse
 from .models import Group, User, Subject, Test, Question, Answer, UserAnswer, CheatingLog
 
 # 1. Userlarni boshqarish
-# app/admin.py
-
 class MyUserAdmin(UserAdmin):
     model = User
     list_display = ['username', 'first_name', 'last_name', 'group', 'is_staff']
     search_fields = ['username', 'first_name', 'last_name', 'middle_name']
     list_filter = ['group']
 
-    # Standart fieldsetlarni override qilamiz (bu tablarni kamaytiradi/tartibga soladi)
     fieldsets = (
         ("Foydalanuvchi ma'lumotlari", {
             'fields': ('username', 'password', 'first_name', 'last_name', 'middle_name', 'email', 'group')
@@ -40,9 +37,18 @@ class AnswerInline(admin.TabularInline):
 
 class QuestionAdmin(admin.ModelAdmin):
     inlines = [AnswerInline]
-    list_display = ['text', 'test', 'subject']
+    # 'text' o'rniga 'short_text' metodini chiqaramiz
+    list_display = ['short_text', 'test', 'subject'] 
     search_fields = ['text']
     list_filter = ['test', 'subject']
+
+    def short_text(self, obj):
+        # Matndagi {} kabi maxsus belgilarni xavfsiz ko'rsatish
+        text = str(obj.text) if obj.text else "Matnsiz savol"
+        short = text[:80] + "..." if len(text) > 80 else text
+        return escape(short) # format_html dagi xatoni oldini oladi
+    
+    short_text.short_description = "Savol matni"
 
 # 4. Testlar va Bulk Upload tugmasi
 class TestAdmin(admin.ModelAdmin):
@@ -50,23 +56,18 @@ class TestAdmin(admin.ModelAdmin):
     filter_horizontal = ('subjects',)
 
     def get_subjects(self, obj):
-        return ", ".join([s.name for s in obj.subjects.all()])
+        return ", ".join([str(s.name) for s in obj.subjects.all()])
     get_subjects.short_description = 'Subjects'
 
     def save_model(self, request, obj, form, change):
-        # after saving new test, if it has subjects specified we may want to
-        # pull existing questions from those subjects into this test.
         is_new = not change
         super().save_model(request, obj, form, change)
         if is_new:
             subs = form.cleaned_data.get('subjects', [])
             if subs:
-                from .models import Question, Answer
                 for subj in subs:
-                    # find all questions already associated with this subject
                     existing = Question.objects.filter(subject=subj)
                     for q in existing:
-                        # avoid duplicates
                         if not Question.objects.filter(test=obj, text=q.text, subject=q.subject).exists():
                             new_q = Question.objects.create(test=obj, text=q.text, subject=q.subject)
                             for ans in q.answers.all():
@@ -76,7 +77,7 @@ class TestAdmin(admin.ModelAdmin):
         url = reverse('bulk_upload', args=[obj.pk])
         return format_html('<a class="button" style="background-color: #447e9b; color: white; padding: 5px 10px; border-radius: 4px;" href="{}">Bulk Upload</a>', url)
 
-    upload_questions_link.short_description = "Savollarni yuklash"
+    upload_questions_link.short_description = "Amallar"
 
 @admin.register(CheatingLog)
 class CheatingLogAdmin(admin.ModelAdmin):

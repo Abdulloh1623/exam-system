@@ -13,7 +13,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-default-key-for-dev')
 
 # Renderda False, Predatoringizda True bo'ladi
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+DEBUG = True
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost','.onrender.com']
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
@@ -38,15 +38,17 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware', # Statik fayllar uchun
+    'whitenoise.middleware.WhiteNoiseMiddleware', # Faqat shu yerda qolsin
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'app.middleware.OneSessionPerUserMiddleware', # O'zingizni middleware
+    'app.middleware.OneSessionPerUserMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# Pastdagi whitenoise import va append qismini butunlay o'chirib tashlang
 # whitenoise is optional (not needed for tests/development without staticfiles)
 try:
     import whitenoise  # noqa: F401
